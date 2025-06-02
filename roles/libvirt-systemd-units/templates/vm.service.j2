@@ -1,0 +1,19 @@
+[Unit]
+Description=VM - {{ item.name }}
+{% if item.depends_on %}
+After=network.target {% for dep in item.depends_on %} {{ dep }}.service{% if not loop.last %} {% endif %}{% endfor +%}
+Requires={% for dep in item.depends_on %}{{ dep }}.service{% if not loop.last %} {% endif %}{% endfor +%}
+{% else %}
+After=network.target
+Requires=
+{% endif %}
+PartOf=vm-group.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/bash -c 'virsh domstate {{ item.name }} | grep -q running || virsh start {{ item.name }}'
+ExecStop=/usr/bin/virsh shutdown {{ item.name }}
+
+[Install]
+WantedBy=vm-group.target

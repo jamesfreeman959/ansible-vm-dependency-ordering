@@ -1,0 +1,47 @@
+---
+- name: Manage VM lifecycle with dependencies
+  hosts: all
+  become: false
+  gather_facts: false
+
+  vars:
+    vms_dict: "{{ dict(vms | map(attribute='name') | zip(vms)) }}"
+
+    # Build the graph from the list of VMs
+    # Constructs a dictionary called 'vm_graph' where each key is the name of a VM from the 'vms' list,
+    # and each value is the corresponding 'depends_on' attribute for that VM.
+    # This is achieved by zipping together the 'name' and 'depends_on' attributes of each VM,
+    # then converting the zipped pairs into a dictionary using the 'dict' filter.
+    # The resulting 'vm_graph' can be used to represent dependency relationships between VMs.
+    vm_graph: >-
+      {{
+        dict(vms | map(attribute='name') |
+        zip(vms | map(attribute='depends_on')))
+      }}
+
+  tasks:
+    - name: Display VM dependency graph
+      ansible.builtin.debug:
+        var: vm_graph
+
+    - name: Compute sorted VM list using custom filter
+      ansible.builtin.set_fact:
+        sorted_vms: "{{ vm_graph | graph_topology_sort }}"
+
+    - name: Display sorted VM startup order
+      ansible.builtin.debug:
+        var: sorted_vms
+
+    - name: Start VMs in sorted order
+      ansible.builtin.debug:
+        msg: "Starting VM {{ item }}"
+      loop: "{{ sorted_vms }}"
+
+    - name: Start and Wait for VMs
+      ansible.builtin.include_tasks:
+        file: stop-wait-vm.yml
+      loop: "{{ sorted_vms | reverse}}"
+      loop_control:
+        loop_var: vmname
+      when: vmname in vms | map(attribute='name') | list
+

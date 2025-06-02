@@ -1,0 +1,7 @@
+---
+- name: Manage VM lifecycle with dependencies
+  hosts: all
+  become: true
+
+  roles:
+    - libvirt-systemd-units

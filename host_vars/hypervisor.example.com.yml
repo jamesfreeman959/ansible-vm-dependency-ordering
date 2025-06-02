@@ -1,0 +1,28 @@
+---
+vms:
+  - name: firewall
+    depends_on: []
+    waitfor_port: 22
+    waitfor_addr: firewall.example.com
+  - name: adserver
+    depends_on:
+      - firewall
+    waitfor_port: 3389
+    waitfor_addr: adserver.example.com
+  - name: nas
+    depends_on:
+      - adserver
+      - firewall
+    waitfor_port: 22
+    waitfor_addr: nas.example.com
+  - name: dockervm
+    depends_on:
+      - nas
+      - firewall
+    waitfor_port: 22
+    waitfor_addr: dockervm.example.com
+  - name: awx
+    depends_on:
+      - firewall
+    waitfor_port: 22
+    waitfor_addr: awx.example.com

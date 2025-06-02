@@ -1,0 +1,40 @@
+---
+- name: Create systemd unit files from template
+  ansible.builtin.template:
+    src: vm.service.j2
+    dest: "/etc/systemd/system/{{ item.name }}.service"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ vms }}"
+  notify:
+    - Reload systemd
+
+- name: Enable and start VM systemd services
+  ansible.builtin.systemd:
+    name: "{{ item.name }}"
+    enabled: true
+    state: started
+  loop: "{{ vms }}"
+
+- name: Create VM group target
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/vm-group.target
+    content: |
+      [Unit]
+      Description=VM Group Target
+      Requires={{ vms | map(attribute='name') | join('.service ') }}.service
+      After={{ vms | map(attribute='name') | join('.service ') }}.service
+
+      [Install]
+      WantedBy=multi-user.target
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reload systemd
+
+- name: Enable VM systemd target
+  ansible.builtin.systemd:
+    name: "vm-group.target"
+    enabled: true

@@ -1,0 +1,16 @@
+---
+- name: Debug print the current VM
+  ansible.builtin.debug:
+    msg: "Current VM: {{ vms_dict[vmname] }}"
+
+- name: Start the VM using the appropriate libvirt module
+  community.libvirt.virt:
+    name: "{{ vms_dict[vmname].name }}"
+    state: running
+
+- name: Wait for VM to become available only if waitfor_addr and waitfor_port are defined
+  ansible.builtin.wait_for:
+    host: "{{ vms_dict[vmname].waitfor_addr }}"
+    port: "{{ vms_dict[vmname].waitfor_port }}"
+    timeout: 300
+  when: vms_dict[vmname].waitfor_addr is defined and vms_dict[vmname].waitfor_port is defined

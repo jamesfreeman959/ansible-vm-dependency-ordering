@@ -1,0 +1,10 @@
+---
+- name: Debug print the current VM
+  ansible.builtin.debug:
+    msg: "Current VM: {{ vms_dict[vmname] }}"
+
+- name: Stop the VM using the appropriate libvirt module
+  community.libvirt.virt:
+    name: "{{ vms_dict[vmname].name }}"
+    state: stopped
+
